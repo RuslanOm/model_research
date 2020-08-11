@@ -65,7 +65,7 @@ def init_model(args):
 
     # Setup Model
     model = get_model({"arch": "hardnet"}, n_classes)
-    state = convert_state_dict(torch.load(args.model_path, map_location=device)["model_state"])
+    state = convert_state_dict(torch.load(args["model_path"], map_location=device)["model_state"])
     model.load_state_dict(state)
     model.eval()
     model.to(device)
@@ -75,27 +75,27 @@ def init_model(args):
 
 def test(args):
     device, model = init_model(args)
-    proc_size = eval(args.size)
+    proc_size = (540,960) if "size" not in args else eval(args["size"])
 
     if os.path.isfile(args.input):
-        img_raw, decoded = process_img(args.input, proc_size, device, model)
+        img_raw, decoded = process_img(args["input"], proc_size, device, model)
         # blend = np.concatenate((img_raw, decoded), axis=1)
-        out_path = os.path.join(args.output, os.path.basename(args.input))
+        out_path = os.path.join(args["output"], os.path.basename(args["input"]))
         cv2.imwrite("test.png", decoded * 255)
         # cv2.imwrite(out_path, decoded)
 
     elif os.path.isdir(args.input):
-        print("Process all image inside : {}".format(args.input))
+        print("Process all image inside : {}".format(args["input"]))
 
         for img_file in os.listdir(args.input):
             _, ext = os.path.splitext(os.path.basename((img_file)))
             if ext not in [".png", ".jpg"]:
                 continue
-            img_path = os.path.join(args.input, img_file)
+            img_path = os.path.join(args["input"], img_file)
 
             img, decoded = process_img(img_path, proc_size, device, model)
             # blend = np.concatenate((img, decoded), axis=1)
-            out_path = os.path.join(args.output, os.path.basename(img_file))
+            out_path = os.path.join(args["output"], os.path.basename(img_file))
             cv2.imwrite(out_path, decoded * 255)
 
 
