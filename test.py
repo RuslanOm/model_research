@@ -11,36 +11,59 @@ from ptsemseg.utils import convert_state_dict
 torch.backends.cudnn.benchmark = True
 import cv2
 
-n_classes = 19
-colors = [  # [  0,   0,   0],
-    [128, 64, 128],
-    [244, 35, 232],
-    [70, 70, 70],
-    [102, 102, 156],
-    [190, 153, 153],
-    [153, 153, 153],
-    [250, 170, 30],
-    [220, 220, 0],
-    [107, 142, 35],
-    [152, 251, 152],
-    [0, 130, 180],
-    [220, 20, 60],
-    [255, 0, 0],
-    [0, 0, 142],
-    [0, 0, 70],
-    [0, 60, 100],
-    [0, 80, 100],
-    [0, 0, 230],
-    [119, 11, 32],
+n_classes = 20
+colors = [[0, 0, 0],
+          [128, 64, 128],
+          [244, 35, 232],
+          [70, 70, 70],
+          [102, 102, 156],
+          [190, 153, 153],
+          [153, 153, 153],
+          [250, 170, 30],
+          [220, 220, 0],
+          [107, 142, 35],
+          [152, 251, 152],
+          [0, 130, 180],
+          [220, 20, 60],
+          [255, 0, 0],
+          [0, 0, 142],
+          [0, 0, 70],
+          [0, 60, 100],
+          [0, 80, 100],
+          [0, 0, 230],
+          [119, 11, 32],
+          ]
+
+class_names = [
+    "unlabelled",
+    "road",
+    "sidewalk",
+    "building",
+    "wall",
+    "fence",
+    "pole",
+    "traffic_light",
+    "traffic_sign",
+    "vegetation",
+    "terrain",
+    "sky",
+    "person",
+    "rider",
+    "car",
+    "truck",
+    "bus",
+    "train",
+    "motorcycle",
+    "bicycle",
 ]
-label_colours = dict(zip(range(19), colors))
+label_colours = dict(zip(range(20), colors))
 
 
 def decode_segmap(temp):
     r = temp.copy()
     g = temp.copy()
     b = temp.copy()
-    for l in range(0, n_classes):
+    for l in range(n_classes):
         r[temp == l] = label_colours[l][0]
         g[temp == l] = label_colours[l][1]
         b[temp == l] = label_colours[l][2]
@@ -50,6 +73,27 @@ def decode_segmap(temp):
     rgb[:, :, 1] = g / 255.0
     rgb[:, :, 2] = b / 255.0
     return rgb
+
+
+def get_segm_by_classes(temp, class_nums):
+    r = np.zeros(temp.shape)
+    g = np.zeros(temp.shape)
+    b = np.zeros(temp.shape)
+
+    for l in class_nums:
+        r[temp == l] = label_colours[l][0]
+        g[temp == l] = label_colours[l][1]
+        b[temp == l] = label_colours[l][2]
+
+    rgb = np.zeros((temp.shape[0], temp.shape[1], 3))
+    rgb[:, :, 0] = r / 255.0
+    rgb[:, :, 1] = g / 255.0
+    rgb[:, :, 2] = b / 255.0
+    return rgb
+
+
+def get_class_labels():
+    return list(enumerate(class_names))
 
 
 def init_model(args):
@@ -75,10 +119,10 @@ def init_model(args):
 
 def test(args):
     device, model = init_model(args)
-    proc_size = (540,960) if "size" not in args else eval(args["size"])
+    proc_size = (540, 960) if "size" not in args else eval(args["size"])
 
     if os.path.isfile(args.input):
-        img_raw, decoded = process_img(args["input"], proc_size, device, model)
+        img_raw, decoded, _ = process_img(args["input"], proc_size, device, model)
         # blend = np.concatenate((img_raw, decoded), axis=1)
         out_path = os.path.join(args["output"], os.path.basename(args["input"]))
         cv2.imwrite("test.png", decoded * 255)
@@ -93,14 +137,14 @@ def test(args):
                 continue
             img_path = os.path.join(args["input"], img_file)
 
-            img, decoded = process_img(img_path, proc_size, device, model)
+            img, decoded, _ = process_img(img_path, proc_size, device, model)
             # blend = np.concatenate((img, decoded), axis=1)
             out_path = os.path.join(args["output"], os.path.basename(img_file))
             cv2.imwrite(out_path, decoded * 255)
 
 
 def process_img(img_path, size, device, model):
-    print("Read Input Image from : {}".format(img_path))
+    # print("Read Input Image from : {}".format(img_path))
 
     img = cv2.imread(img_path)
     img_resized = cv2.resize(img, (size[1], size[0]))  # uint8 with RGB mode
@@ -122,11 +166,11 @@ def process_img(img_path, size, device, model):
     images = img.to(device)
     start = time.time()
     outputs = model(images)
-    print(time.time() - start, start)
+    procc_time = time.time() - start
     pred = np.squeeze(outputs.data.max(1)[1].cpu().numpy(), axis=0)
     decoded = decode_segmap(pred)
 
-    return img_resized, decoded
+    return img_resized, decoded, procc_time
 
 
 if __name__ == "__main__":
