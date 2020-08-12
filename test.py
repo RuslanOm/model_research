@@ -11,8 +11,8 @@ from ptsemseg.utils import convert_state_dict
 torch.backends.cudnn.benchmark = True
 import cv2
 
-n_classes = 20
-colors = [[0, 0, 0],
+n_classes = 19
+colors = [#[0, 0, 0],
           [128, 64, 128],
           [244, 35, 232],
           [70, 70, 70],
@@ -35,7 +35,7 @@ colors = [[0, 0, 0],
           ]
 
 class_names = [
-    "unlabelled",
+    # "unlabelled",
     "road",
     "sidewalk",
     "building",
@@ -56,7 +56,7 @@ class_names = [
     "motorcycle",
     "bicycle",
 ]
-label_colours = dict(zip(range(20), colors))
+label_colours = dict(zip(range(19), colors))
 
 
 def decode_segmap(temp):
