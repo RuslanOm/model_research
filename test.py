@@ -122,7 +122,7 @@ def test(args):
     proc_size = (540, 960) if "size" not in args else eval(args["size"])
 
     if os.path.isfile(args.input):
-        img_raw, decoded, _ = process_img(args["input"], proc_size, device, model)
+        img_raw, decoded, _, _ = process_img(args["input"], proc_size, device, model)
         # blend = np.concatenate((img_raw, decoded), axis=1)
         out_path = os.path.join(args["output"], os.path.basename(args["input"]))
         cv2.imwrite("test.png", decoded * 255)
@@ -137,7 +137,7 @@ def test(args):
                 continue
             img_path = os.path.join(args["input"], img_file)
 
-            img, decoded, _ = process_img(img_path, proc_size, device, model)
+            img, decoded, _, _ = process_img(img_path, proc_size, device, model)
             # blend = np.concatenate((img, decoded), axis=1)
             out_path = os.path.join(args["output"], os.path.basename(img_file))
             cv2.imwrite(out_path, decoded * 255)
@@ -170,7 +170,7 @@ def process_img(img_path, size, device, model):
     pred = np.squeeze(outputs.data.max(1)[1].cpu().numpy(), axis=0)
     decoded = decode_segmap(pred)
 
-    return img_resized, decoded, procc_time
+    return img_resized, decoded, pred,  procc_time
 
 
 if __name__ == "__main__":
